@@ -1,0 +1,135 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --color-ink: #111827;
+  --color-canvas: #fafaf9;
+  --color-accent: #f97316;
+  --color-accent-dark: #ea580c;
+  --color-accent-soft: #ffedd5;
+  --color-otj: #16a34a;
+  --color-otj-soft: #dcfce7;
+  --color-social: #4b5563;
+  --color-social-soft: #f3f4f6;
+  --color-line: #e7e5e4;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Horizontal scrollers without a visible scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Leaflet: plain background if OSM tiles fail to load, so pins still show. */
+.leaflet-container {
+  background: #eef2f1;
+  font-family: var(--font-sans);
+}
+.otc-pin {
+  background: transparent;
+  border: none;
+}
+.otc-pin > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  color: #fff;
+  transition: transform 120ms ease;
+}
+.otc-pin:hover > div {
+  transform: scale(1.12);
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 16px;
+}
+.leaflet-popup-content {
+  margin: 12px 14px;
+}
+
+/* P2: subtle card + toast animations */
+.card-lift {
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -12px rgb(17 24 39 / 0.18);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.toast-in {
+  animation: toast-in 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-lift,
+  .toast-in,
+  .otc-pin > div {
+    transition: none;
+    animation: none;
+  }
+  .card-lift:hover {
+    transform: none;
+  }
+}
+
+/* Print: A4 evidence report */
+@page {
+  size: A4;
+  margin: 16mm;
+}
+@media print {
+  body {
+    background: #fff;
+  }
+  .print-section {
+    break-inside: avoid;
+  }
+}
+
+@layer components {
+  .input {
+    @apply rounded-xl border border-line bg-white px-3.5 py-2.5 text-[15px] outline-none transition-shadow focus:border-accent focus:ring-2 focus:ring-accent/25;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-accent px-5 py-2.5 font-semibold text-white transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-line bg-white px-5 py-2.5 font-semibold text-ink transition-colors hover:border-gray-400;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-stone-100 hover:text-ink;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-white;
+  }
+  .section-title {
+    @apply text-xl font-extrabold tracking-tight;
+  }
+}
