@@ -4,6 +4,6 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // Single-bundle local demo; Leaflet + React push it just past the default 500 kB warning.
-  build: { chunkSizeWarningLimit: 800 },
+  // Local demo: the app bundle is ~550 kB and MapLibre (lazy-loaded with the first map) is ~1 MB on its own.
+  build: { chunkSizeWarningLimit: 1100 },
 });

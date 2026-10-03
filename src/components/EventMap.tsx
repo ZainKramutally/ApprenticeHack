@@ -1,8 +1,9 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useMemo } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import { fmtCard, startsAt } from '../lib/dates';
 import { CATEGORY } from '../lib/events';
@@ -35,14 +36,38 @@ function Recenter({ center, zoom }: { center: [number, number]; zoom: number }) 
   return null;
 }
 
-/** OSM tiles need internet. If they fail, Leaflet's plain background shows and pins still render. */
+/** OpenFreeMap "Positron": minimal light-grey vector basemap. Free, no API key. */
+const BASEMAP_STYLE = 'https://tiles.openfreemap.org/styles/positron';
+const BASEMAP_ATTRIBUTION =
+  '<a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>';
+
+/**
+ * Renders the MapLibre vector basemap as a Leaflet layer, so markers, popups and click-to-place
+ * stay plain Leaflet. Needs internet; if the style or tiles fail, the container's plain background
+ * shows and the pins still render.
+ */
 function Tiles() {
-  return (
-    <TileLayer
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-    />
-  );
+  const map = useMap();
+  useEffect(() => {
+    let layer: L.Layer | undefined;
+    let cancelled = false;
+    // MapLibre is large, so it loads in its own chunk the first time a map appears.
+    import('@maplibre/maplibre-gl-leaflet')
+      .then(({ maplibreGL }) => {
+        if (cancelled) return;
+        layer = maplibreGL({ style: BASEMAP_STYLE, attributionControl: false });
+        layer.getAttribution = () => BASEMAP_ATTRIBUTION;
+        layer.addTo(map);
+      })
+      .catch(() => {
+        // Leave the plain background; pins still render.
+      });
+    return () => {
+      cancelled = true;
+      layer?.remove();
+    };
+  }, [map]);
+  return null;
 }
 
 export function EventMap({ events, center, zoom = 12, className = '' }: {

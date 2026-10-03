@@ -1,6 +1,6 @@
 # Off the Clock: Build Spec
 
-> **Repo status:** the MVP described below is built (Vite + React + TS in `src/`). Extend and fix it; don't re-scaffold. Run with `npm install` then `npm run dev`; check with `npm run typecheck` and `npm run build`. Section 11's demo script is the acceptance test, so walk through it after changing anything in `src/lib/`. Implementation notes and deviations from this spec are in [Section 14](#14-implementation-notes). The presenter run-sheet and code tour are in `GUIDE.md`.
+> **Repo status:** the MVP described below is built (Vite + React + TS in `src/`). Extend and fix it; don't re-scaffold. Run with `npm install` then `npm run dev`; check with `npm run typecheck` and `npm run build`. Section 11's demo script is the acceptance test, so walk through it after changing anything in `src/lib/`. Implementation notes and deviations from this spec are in [Section 14](#14-implementation-notes); the group chat, privacy and map decisions made after the first build are in [Section 15](#15-group-chat-and-privacy-added-after-the-mvp). The presenter run-sheet and code tour are in `GUIDE.md`.
 
 > **Prompt for the coding agent:** You are building a clickable front-end demo of *Off the Clock*, an events app for UK apprentices. Read this whole spec first, then build in the order in [Section 12](#12-build-order). Make sensible choices instead of asking questions. There is no backend: all data is seeded from the files in [Section 10](#10-seed-data) and persisted in `localStorage`. The demo is presented live in under 3 hours, so the P0 loop in [Section 11](#11-demo-script-acceptance-test) must work end to end before anything else is polished.
 
@@ -21,14 +21,14 @@ Off the Clock is a Luma-style events app only for apprentices. It lists socials 
 | Build | Vite + React 18 + TypeScript |
 | Styling | Tailwind CSS, Inter font (Google Fonts) |
 | Routing | react-router-dom v6 |
-| Map | react-leaflet + Leaflet with OpenStreetMap tiles |
+| Map | react-leaflet + Leaflet; basemap is OpenFreeMap **Positron** vector tiles (free, no key) via `maplibre-gl` + `@maplibre/maplibre-gl-leaflet` (see Section 15) |
 | Icons | lucide-react |
 | Dates | date-fns |
 | State | React context + `useReducer`, persisted to `localStorage` key `otc:v1` |
 | PDF | Browser print (`window.print()`) with a print stylesheet |
 | CSV | Built in the browser, downloaded via a Blob link |
 
-**Runs locally** with `npm install` then `npm run dev`. OpenStreetMap tiles need internet, so the map must degrade gracefully: if tiles fail to load, pins still show on Leaflet's plain background and nothing else breaks. Add a short `README.md` with the run commands and the demo script from Section 11.
+**Runs locally** with `npm install` then `npm run dev`. Map tiles need internet, so the map must degrade gracefully: if tiles fail to load, pins still show on Leaflet's plain background and nothing else breaks. Add a short `README.md` with the run commands and the demo script from Section 11.
 
 Suggested structure:
 
@@ -60,7 +60,7 @@ src/
 
 ## 4. Layout and navigation
 
-- **Desktop:** fixed left icon rail (72px). Top: logo mark (a clock face with a small tick) and wordmark on hover. Icons, top to bottom: Discover (`Compass`), Search (`Search`), Favourites (`Heart`), Profile (`User`). Organisers also get Create (`PlusCircle`). Active item: filled accent background.
+- **Desktop:** fixed left icon rail (72px). Top: logo mark (a clock face with a small tick) and wordmark on hover. Icons, top to bottom: Discover (`Compass`), Search (`Search`), Chats (`MessageCircle`, with an unread badge), Favourites (`Heart`), Profile (`User`). Organisers also get Create (`PlusCircle`). Active item: filled accent background.
 - **Mobile (< 768px):** same items as a bottom tab bar.
 - **Routes:**
 
@@ -71,6 +71,8 @@ src/
 | `/` | Discover | Home |
 | `/event/:id` | Event page | |
 | `/search` | Search | |
+| `/chats` | Chats list | Section 15 |
+| `/chats/:eventId` | Event group chat | Section 15 |
 | `/favourites` | Favourites | |
 | `/profile` | Profile + KSB tracker | |
 | `/report` | Report generator | |
@@ -582,7 +584,7 @@ Run the app, walk through Section 11, and fix anything that fails before adding 
 
 ## 13. Out of scope
 
-Real authentication, a backend or database, real OneFile or Aptem integration, QR check-in, AI-written evidence, payments, chat, notifications, and native mobile apps. Mention these as the roadmap in the pitch, not in the build.
+Real authentication, a backend or database, real OneFile or Aptem integration, QR check-in, AI-written evidence, payments, real-time multi-device chat (chat is simulated in the browser, see Section 15), notifications, and native mobile apps. Mention these as the roadmap in the pitch, not in the build.
 
 ---
 
@@ -609,5 +611,37 @@ Decisions made while building, kept here so future changes stay consistent:
 - **Report checklist** ticks every attended event by default (social ones feed section 4).
 - **Edit baseline** is `/onboarding?edit=baseline`, which opens step 3 prefilled and saves back to `/profile`.
 - **Tailwind v4.** Tokens are in `@theme` in `src/index.css` (`ink`, `canvas`, `accent`, `otj`, `social`, `line`); shared classes are `.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.input`, `.card` and `.section-title`.
+- **Map basemap.** `Tiles` in `src/components/EventMap.tsx` adds OpenFreeMap Positron as a MapLibre layer inside Leaflet, so pins, popups and click-to-place stay plain Leaflet. CARTO tiles were rejected (they now need an API key) and real Google Maps needs billing and a key; event pages link out with **Open in Google Maps** instead.
 - **Leaflet z-index.** Maps get `z-0` so their panes stay below the sticky chips (`z-[1010]`), nav (`z-[1050]`), modal (`z-[1500]`) and toast (`z-[2000]`).
 - **P2 done:** "{n} from your course" (a stable estimate) and subtle card/toast animations. Not done: gateway boost (commented in `score.ts`) and dark mode.
+
+---
+
+## 15. Group chat and privacy (added after the MVP)
+
+Decided with the product owner after the first demo build. Chat is **simulated in the browser** (no backend), so messages persist in `localStorage` and show across personas in the same browser. Real-time chat would need a backend (e.g. Supabase) and is roadmap.
+
+### Rules
+1. **Auto-join on RSVP, with opt-out.** RSVPing adds you to the event's group chat when the "Join the group chat" checkbox is ticked. It defaults to the user's **Join event group chats when I RSVP** setting (on by default). Cancelling an RSVP leaves the chat. Going-but-not-in-chat users get a **Join group chat** button.
+2. **Who can read a chat:** members only (people who joined) plus the host organisation's organisers. Everyone else sees "Only people going and the host can see this chat" and an RSVP or Join prompt, never the messages.
+3. **Hosts:** organisers are members of every chat for their organisation's events (seeded for Jordan; added on Create). They post with a **Host** badge and can't leave.
+4. **Names:** other people only ever see **first name + last initial**, the course short name, and the employer if that person allows it. Never email, date of birth or age.
+5. **Privacy settings** (Profile → Privacy, stored on `user.privacy`, defaults in `lib/chat.ts`):
+   - `autoJoinChats` (default on)
+   - `showGoing`: `everyone` (default) | `coursemates` (same standard) | `nobody`. This controls "Who's going" on event pages and the chat members panel. Counts always include everyone.
+   - `showEmployer` (default on)
+6. **In-chat safety:** mute, leave (non-hosts), and **report**, which hides the message for the reporter and says it was reported to the host. Every chat shows a reminder that only attendees and the host can see it. The members panel warns against sharing contact details.
+7. **Lifetime:** a chat stays open for 7 days after the event ends, then becomes read-only.
+8. **Under-18s** can't see 18+ events (rule 3), so they can never join those chats. When friends and direct messages arrive, block DMs between adults and under-18s.
+
+### Seeded content
+- `data/people.ts`: 24 fictional apprentices (12 per city, mixed standards and employers). `peopleGoing(event)` returns a stable named subset of an event's `goingCount` (same city, preferring matching standards). Organiser-created events start with nobody.
+- `data/chatSeed.ts`: per-category message templates that generate each event's history (host welcome plus attendee chatter, starting 09:00 the day before; past events also get a message or two after they ended).
+- Persona RSVPs seed chat membership, with the last two seeded messages unread.
+- Joining a chat triggers one simulated **"Welcome {name}! 👋"** about 2.5s later from someone already going (or the host on a new event).
+
+### Data model additions
+`Person`, `ChatMember { userId, eventId, joinedAt, lastReadAt?, muted? }`, `ChatMessage { id, eventId, authorId, text, sentAt }` (authorId is a user id, a person id, `host:{organiserId}` or `system`), `PrivacySettings`, `Apprentice.employer?`, `User.privacy?`, and `AppState.chatMembers / messages / hiddenMessages`. Seeded threads are generated from code and never stored. Older saved state is upgraded in `hydrate()` in `context/AppState.tsx`.
+
+### Later: friends (planned, not built)
+Mutual connections (request and accept). Suggest coursemates on the same standard at *other* employers, plus people from shared events and chats. "2 friends going" profile pictures on cards, a "Friends going" filter, friends first in attendee lists, and DMs between friends (with the under-18 rule). Reuse `PEOPLE` and the privacy settings above.

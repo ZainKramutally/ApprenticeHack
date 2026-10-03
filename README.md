@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173. Map tiles come from OpenStreetMap and need internet. Offline, the pins still show on a plain background.
+Then open http://localhost:5173. The map (OpenFreeMap, no API key) needs internet. Offline, the pins still show on a plain background.
 
 Other scripts: `npm run build` (typecheck + production build), `npm run preview` (serve the build), `npm run typecheck`.
 
@@ -34,6 +34,12 @@ Other scripts: `npm run build` (typecheck + production build), `npm run preview`
 8. **Generate report**: OTJ entry, KSB write-ups for K3, K11 and S8, progress summary. **Copy** a section, then **Download PDF** and **Download CSV**.
 9. Switch persona to **Jordan**, **Create** a workshop tagged with DTSP KSBs and publish. Switch back to Sam: it's on the map and, if it hits his gaps, in his recommendations.
 10. Switch to **Aisha** (Manchester, Project manager) and **Priya** (London, Finance) to show it works across standards.
+
+**Group chat and privacy:**
+
+11. As **Sam**, RSVP to **Fintech for Good Hackathon** with "Join the group chat" ticked. The toast says you've been added, a welcome arrives a moment later, and **Chats** shows an unread badge. Post "Anyone want to team up?".
+12. Switch to **Priya**. The hackathon chat is locked until she RSVPs. After she does, she sees Sam's message.
+13. As **Sam**, go to **Profile → Privacy** and set "Who can see I'm going" to **Nobody**. Switch to Priya: Sam has disappeared from the hackathon's "Who's going" list and the chat's member list, but the count hasn't changed.
 
 Reset at any time from **Profile → Reset demo data**.
 

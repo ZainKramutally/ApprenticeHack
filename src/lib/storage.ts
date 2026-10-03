@@ -2,21 +2,14 @@ import type { AppState } from '../types';
 
 export const STORAGE_KEY = 'otc:v1';
 
-export function loadState(): AppState | null {
+/** Raw saved state, or null if missing/unparsable. AppState fills defaults for anything missing. */
+export function loadState(): (Partial<AppState> & Pick<AppState, 'users'>) | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<AppState>;
     if (!parsed || !Array.isArray(parsed.users)) return null;
-    return {
-      currentUserId: parsed.currentUserId ?? null,
-      users: parsed.users,
-      rsvps: parsed.rsvps ?? [],
-      favourites: parsed.favourites ?? [],
-      attendance: parsed.attendance ?? [],
-      customEvents: parsed.customEvents ?? [],
-      customOrganisers: parsed.customOrganisers ?? [],
-    };
+    return parsed as Partial<AppState> & Pick<AppState, 'users'>;
   } catch {
     return null;
   }

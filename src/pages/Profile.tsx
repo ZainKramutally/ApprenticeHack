@@ -1,19 +1,22 @@
 import { parseISO } from 'date-fns';
-import { FileText, LogOut, MapPin, PencilLine, RotateCcw } from 'lucide-react';
+import { FileText, Lock, LogOut, MapPin, PencilLine, RotateCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AttendModal } from '../components/AttendModal';
 import { OrganiserTypeBadge, StatusPill, VerifiedTick } from '../components/Badge';
 import { EmptyState, EventCard } from '../components/EventCard';
+import { Chip } from '../components/FilterChips';
 import { ProgressBar, ProgressRing, StatTile } from '../components/StatTile';
+import { Toggle } from '../components/Toggle';
 import { useAllEvents, useApp, useApprentice, useCurrentUser, useMyEventState, useOrganiser, useProgress } from '../context/AppState';
 import { getKsb, getStandard, KSB_TYPE_LABEL } from '../data/standards';
 import { daysUntil, fmtCard, fmtLong, isUpcoming, startsAt } from '../lib/dates';
+import { privacyOf } from '../lib/chat';
 import { checkEmail } from '../lib/email';
 import { byStartAsc, byStartDesc } from '../lib/events';
 import { ksbStatus } from '../lib/progress';
 import { num } from '../lib/report';
-import type { Apprentice, EventItem, KsbType } from '../types';
+import type { Apprentice, EventItem, GoingVisibility, KsbType } from '../types';
 
 function Tabs<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { id: T; label: string; count?: number }[] }) {
   return (
@@ -114,6 +117,7 @@ function ApprenticeProfile() {
               {std.title} · Level {std.level} · {user.pathway}
             </p>
             <p className="flex flex-wrap items-center gap-x-3 text-sm text-gray-500">
+              {user.employer && <span>{user.employer}</span>}
               <span>{user.provider}</span>
               <span className="inline-flex items-center gap-1">
                 <MapPin className="size-3.5" />
@@ -303,6 +307,8 @@ function ApprenticeProfile() {
         </Link>
       </div>
 
+      <PrivacyCard user={user} />
+
       <DemoFooter />
 
       {attending && <AttendModal event={attending} onClose={() => setAttending(null)} />}
@@ -381,5 +387,57 @@ function OrganiserProfile() {
 
       <DemoFooter />
     </div>
+  );
+}
+
+const GOING_OPTIONS: { id: GoingVisibility; label: string }[] = [
+  { id: 'everyone', label: 'Everyone' },
+  { id: 'coursemates', label: 'Coursemates' },
+  { id: 'nobody', label: 'Nobody' },
+];
+
+function PrivacyCard({ user }: { user: Apprentice }) {
+  const { dispatch, toast } = useApp();
+  const p = privacyOf(user);
+  const save = (patch: Partial<typeof p>) => {
+    dispatch({ type: 'updatePrivacy', privacy: { ...p, ...patch } });
+    toast('Privacy settings saved');
+  };
+  return (
+    <section id="privacy" className="card scroll-mt-6 space-y-4 p-6">
+      <div>
+        <h2 className="section-title flex items-center gap-2">
+          <Lock className="size-5" /> Privacy
+        </h2>
+        <p className="text-sm text-gray-600">Choose what other apprentices can see about you.</p>
+      </div>
+      <Toggle
+        on={p.autoJoinChats}
+        onChange={(v) => save({ autoJoinChats: v })}
+        label="Join event group chats when I RSVP"
+        hint="You can still untick this for a single event when you RSVP."
+      />
+      <div className="rounded-xl border border-line px-4 py-3">
+        <p className="text-sm font-semibold">Who can see I'm going to events</p>
+        <p className="mb-2 text-xs text-gray-500">Coursemates means apprentices on the same standard as you. Counts always include you.</p>
+        <div className="flex flex-wrap gap-2">
+          {GOING_OPTIONS.map((o) => (
+            <Chip key={o.id} active={p.showGoing === o.id} onClick={() => save({ showGoing: o.id })}>
+              {o.label}
+            </Chip>
+          ))}
+        </div>
+      </div>
+      <Toggle
+        on={p.showEmployer}
+        onChange={(v) => save({ showEmployer: v })}
+        label="Show my employer next to my name"
+        hint={user.employer ? `Currently: ${user.employer}` : 'Add your employer in onboarding to show it.'}
+      />
+      <p className="text-xs leading-relaxed text-gray-500">
+        Others only ever see your first name and last initial. We never show your email, date of birth or age. Anyone in an event's
+        group chat can see messages you post there.
+      </p>
+    </section>
   );
 }

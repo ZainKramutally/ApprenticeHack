@@ -1,19 +1,31 @@
-import { Compass, Heart, LogOut, PlusCircle, Search, User, type LucideIcon } from 'lucide-react';
+import { Compass, Heart, LogOut, MessageCircle, PlusCircle, Search, User, type LucideIcon } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useApp, useCurrentUser } from '../context/AppState';
+import { useApp, useCurrentUser, useUnreadTotal } from '../context/AppState';
 import { LogoMark, Wordmark } from './Logo';
 
 interface Item {
   to: string;
   label: string;
   Icon: LucideIcon;
+  badge?: number;
+}
+
+function Badge({ n }: { n?: number }) {
+  if (!n) return null;
+  return (
+    <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+      {n > 99 ? '99+' : n}
+    </span>
+  );
 }
 
 function useItems(): Item[] {
   const user = useCurrentUser();
+  const unread = useUnreadTotal();
   const items: Item[] = [
     { to: '/', label: 'Discover', Icon: Compass },
     { to: '/search', label: 'Search', Icon: Search },
+    { to: '/chats', label: 'Chats', Icon: MessageCircle, badge: unread },
     { to: '/favourites', label: 'Favourites', Icon: Heart },
     { to: '/profile', label: 'Profile', Icon: User },
   ];
@@ -39,7 +51,7 @@ export function Sidebar() {
         <Wordmark className="whitespace-nowrap text-lg opacity-0 transition-opacity group-hover:opacity-100" />
       </NavLink>
       <ul className="flex flex-1 flex-col gap-1 px-3">
-        {items.map(({ to, label, Icon }) => (
+        {items.map(({ to, label, Icon, badge }) => (
           <li key={to}>
             <NavLink
               to={to}
@@ -51,7 +63,10 @@ export function Sidebar() {
                 }`
               }
             >
-              <Icon className="size-[20px] shrink-0" />
+              <span className="relative shrink-0">
+                <Icon className="size-[20px]" />
+                <Badge n={badge} />
+              </span>
               <span className="whitespace-nowrap opacity-0 transition-opacity group-hover:opacity-100">{label}</span>
             </NavLink>
           </li>
@@ -83,7 +98,7 @@ export function BottomBar() {
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-[1050] flex border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden print:hidden"
     >
-      {items.map(({ to, label, Icon }) => (
+      {items.map(({ to, label, Icon, badge }) => (
         <NavLink
           key={to}
           to={to}
@@ -94,8 +109,9 @@ export function BottomBar() {
         >
           {({ isActive }) => (
             <>
-              <span className={`flex h-8 w-12 items-center justify-center rounded-full ${isActive ? 'bg-accent text-white' : ''}`}>
+              <span className={`relative flex h-8 w-12 items-center justify-center rounded-full ${isActive ? 'bg-accent text-white' : ''}`}>
                 <Icon className="size-5" />
+                <Badge n={badge} />
               </span>
               {label}
             </>

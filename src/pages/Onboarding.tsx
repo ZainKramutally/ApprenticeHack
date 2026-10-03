@@ -58,6 +58,7 @@ function Wizard({ editing, existing }: { editing: boolean; existing: Apprentice 
   const [standardCode, setStandardCode] = useState<StandardCode>(existing?.standardCode ?? 'ST0119');
   const [pathway, setPathway] = useState(existing?.pathway ?? getStandard('ST0119').pathways[0]);
   const [provider, setProvider] = useState(existing?.provider ?? '');
+  const [employer, setEmployer] = useState(existing?.employer ?? '');
   const [city, setCity] = useState<City>(existing?.city ?? 'London');
 
   // Step 3: baseline
@@ -150,6 +151,7 @@ function Wizard({ editing, existing }: { editing: boolean; existing: Apprentice 
         standardCode,
         pathway,
         provider: provider.trim(),
+        employer: employer.trim() || undefined,
         city,
         ...baseline,
       },
@@ -295,6 +297,9 @@ function Wizard({ editing, existing }: { editing: boolean; existing: Apprentice 
               </Field>
               <Field label="Training provider" error={tried ? step2Errors.provider : undefined}>
                 <input className="input w-full" value={provider} onChange={(e) => setProvider(e.target.value)} placeholder="e.g. Thames Tech Training" />
+              </Field>
+              <Field label="Employer (optional)">
+                <input className="input w-full" value={employer} onChange={(e) => setEmployer(e.target.value)} placeholder="e.g. Brightwire Software" />
               </Field>
               <Field label="City">
                 <div className="flex gap-2">
