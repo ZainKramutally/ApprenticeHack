@@ -1,4 +1,4 @@
-# clock it
+# Clock It
 
 **Meet other apprentices. Close your KSB gaps.**
 
